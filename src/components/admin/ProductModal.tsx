@@ -15,28 +15,32 @@ interface ProductModalProps {
 export function ProductModal({ isOpen, onClose, onSave, productToEdit }: ProductModalProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [clase, setClase] = useState("");
+  const [composicion, setComposicion] = useState("");
   const [price, setPrice] = useState("");
-  const [category, setCategory] = useState("");
-  const [presentation, setPresentation] = useState("");
+  const [unidadMedida, setUnidadMedida] = useState("");
+  
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (productToEdit) {
-      setName(productToEdit.name);
-      setDescription(productToEdit.description);
-      setPrice(productToEdit.price.toString());
-      setCategory(productToEdit.category);
-      setPresentation(productToEdit.presentation || "");
-      setPreviewUrl(productToEdit.imageUrl);
+      setName(productToEdit.name || "");
+      setDescription(productToEdit.description || "");
+      setClase(productToEdit.clase || "");
+      setComposicion(productToEdit.composicion || "");
+      setPrice(productToEdit.price ? productToEdit.price.toString() : "");
+      setUnidadMedida(productToEdit.unidadMedida || "");
+      setPreviewUrl(productToEdit.imageUrl || "");
       setFile(null);
     } else {
       setName("");
       setDescription("");
+      setClase("");
+      setComposicion("");
       setPrice("");
-      setCategory("");
-      setPresentation("");
+      setUnidadMedida("");
       setFile(null);
       setPreviewUrl("");
     }
@@ -60,10 +64,11 @@ export function ProductModal({ isOpen, onClose, onSave, productToEdit }: Product
         {
           name,
           description,
-          price: parseFloat(price),
-          category,
-          presentation,
-          imageUrl: previewUrl, // This will be updated in the parent if a new file is uploaded
+          clase,
+          composicion,
+          price: parseFloat(price) || 0,
+          unidadMedida,
+          imageUrl: previewUrl,
         },
         file
       );
@@ -83,7 +88,7 @@ export function ProductModal({ isOpen, onClose, onSave, productToEdit }: Product
           <div className="absolute inset-0 bg-gray-500 opacity-75" onClick={onClose}></div>
         </div>
 
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+        <div className="relative z-10 inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div className="flex justify-between items-center mb-5">
               <h3 className="text-xl leading-6 font-medium text-gray-900">
@@ -95,8 +100,10 @@ export function ProductModal({ isOpen, onClose, onSave, productToEdit }: Product
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-4">
+              
+              {/* 1. Producto */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">Nombre del Abono</label>
+                <label className="block text-sm font-medium text-gray-700">Producto</label>
                 <input
                   type="text"
                   required
@@ -106,29 +113,45 @@ export function ProductModal({ isOpen, onClose, onSave, productToEdit }: Product
                 />
               </div>
 
+              {/* 2. Descripción */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">Categoría</label>
+                <label className="block text-sm font-medium text-gray-700">Descripción</label>
+                <textarea
+                  required
+                  rows={2}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                ></textarea>
+              </div>
+
+              {/* 3. Clase */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Clase</label>
                 <input
                   type="text"
                   required
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  value={clase}
+                  onChange={(e) => setClase(e.target.value)}
                   placeholder="Ej: Orgánico, Químico..."
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
                 />
               </div>
 
+              {/* 4. Composición */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">Presentación</label>
-                <input
-                  type="text"
-                  value={presentation}
-                  onChange={(e) => setPresentation(e.target.value)}
-                  placeholder="Ej: Saco de 50kg, Botella 1L..."
+                <label className="block text-sm font-medium text-gray-700">Composición</label>
+                <textarea
+                  required
+                  rows={2}
+                  value={composicion}
+                  onChange={(e) => setComposicion(e.target.value)}
+                  placeholder="Ej: Nitrógeno 10%, Fósforo 20%..."
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                />
+                ></textarea>
               </div>
 
+              {/* 5. Precio */}
               <div>
                 <label className="block text-sm font-medium text-gray-700">Precio ($)</label>
                 <input
@@ -141,17 +164,20 @@ export function ProductModal({ isOpen, onClose, onSave, productToEdit }: Product
                 />
               </div>
 
+              {/* 6. Unidad Medida */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">Descripción</label>
-                <textarea
+                <label className="block text-sm font-medium text-gray-700">Unidad de Medida</label>
+                <input
+                  type="text"
                   required
-                  rows={3}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  value={unidadMedida}
+                  onChange={(e) => setUnidadMedida(e.target.value)}
+                  placeholder="Ej: Saco de 50kg, Litro..."
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                ></textarea>
+                />
               </div>
 
+              {/* 7. Imagen del Producto */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Imagen del Producto</label>
                 <div className="flex items-center justify-center w-full">

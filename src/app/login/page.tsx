@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Leaf, Lock } from "lucide-react";
-import { loginAdmin } from "@/lib/firebase/auth";
+import { Lock } from "lucide-react";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,22 +13,18 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
-    // Validar letras y números en usuario y contraseña (opcional pero solicitado)
-    if (!/^[a-zA-Z0-9]+$/.test(username) || !/^[a-zA-Z0-9]+$/.test(password)) {
-      setError("El usuario y contraseña deben contener solo letras y números.");
-      return;
-    }
-
     setLoading(true);
-    try {
-      await loginAdmin(username, password);
-      router.push("/admin");
-    } catch (err: any) {
-      setError("Credenciales incorrectas o error al iniciar sesión.");
-    } finally {
-      setLoading(false);
-    }
+
+    // Simular un pequeño retraso para la experiencia de usuario
+    setTimeout(() => {
+      if (password === "huatuco123") {
+        localStorage.setItem("admin_auth", "true");
+        router.push("/admin");
+      } else {
+        setError("Contraseña incorrecta.");
+        setLoading(false);
+      }
+    }, 500);
   };
 
   return (
@@ -50,24 +44,6 @@ export default function LoginPage() {
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-100">
           <form className="space-y-6" onSubmit={handleLogin}>
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Usuario
-              </label>
-              <div className="mt-1">
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                  placeholder="Solo letras y números..."
-                />
-              </div>
-            </div>
-
-            <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Contraseña
               </label>
@@ -80,7 +56,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                  placeholder="Solo letras y números..."
+                  placeholder="Ingresa la contraseña..."
                 />
               </div>
             </div>

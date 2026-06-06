@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/lib/firebase/config";
 import { Loader2 } from "lucide-react";
-import { logout } from "@/lib/firebase/auth";
 import Link from "next/link";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -13,16 +10,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        router.push("/login");
-      } else {
-        setLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
+    // Verificamos si la sesión está iniciada en localStorage
+    const isAuth = localStorage.getItem("admin_auth");
+    if (isAuth !== "true") {
+      router.push("/login");
+    } else {
+      setLoading(false);
+    }
   }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("admin_auth");
+    router.push("/login");
+  };
 
   if (loading) {
     return (
@@ -45,10 +45,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 Ver Catálogo
               </Link>
               <button
-                onClick={async () => {
-                  await logout();
-                  router.push("/login");
-                }}
+                onClick={handleLogout}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Cerrar Sesión

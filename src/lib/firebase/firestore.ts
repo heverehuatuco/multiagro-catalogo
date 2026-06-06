@@ -16,10 +16,11 @@ import { db } from "./config";
 export interface Product {
   id?: string;
   name: string;
+  price: number;
+  unidadMedida: string;
   description: string;
-  price: number; // Lo mantengo por si acaso, aunque no lo haya mencionado estrictamente
-  category: string;
-  presentation?: string; // Nuevo campo: Presentación
+  clase: string;
+  composicion: string;
   imageUrl: string;
   createdAt?: any;
   updatedAt?: any;
@@ -39,6 +40,12 @@ export async function getProducts(): Promise<Product[]> {
     querySnapshot.forEach((doc) => {
       products.push({ id: doc.id, ...doc.data() } as Product);
     });
+    
+    // Ordenar alfabéticamente por nombre de producto (ignora mayúsculas/minúsculas y acentos)
+    products.sort((a, b) => 
+      (a.name || "").localeCompare(b.name || "", 'es', { sensitivity: 'base' })
+    );
+
     return products;
   } catch (error) {
     console.error("Error al obtener productos:", error);
