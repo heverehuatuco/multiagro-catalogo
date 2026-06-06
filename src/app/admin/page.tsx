@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Plus, Edit2, Trash2, Loader2, Image as ImageIcon, Upload } from "lucide-react";
-import { getProducts, createProduct, updateProduct, deleteProduct, Product } from "@/lib/firebase/firestore";
+import { getProducts, createProduct, updateProduct, deleteProduct, getCategoryPriorities, saveCategoryPriorities, Product } from "@/lib/firebase/firestore";
 import { uploadImage, deleteImage } from "@/lib/firebase/storage";
 import { ProductModal } from "@/components/admin/ProductModal";
+import { CategoryPriorityModal } from "@/components/admin/CategoryPriorityModal";
 import Image from "next/image";
 import * as xlsx from "xlsx";
 
@@ -12,6 +13,8 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPriorityModalOpen, setIsPriorityModalOpen] = useState(false);
+  const [categoryPriorities, setCategoryPriorities] = useState<string[]>([]);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -23,7 +26,9 @@ export default function AdminDashboard() {
   const fetchProducts = async (showLoading = true) => {
     if (showLoading) setLoading(true);
     const data = await getProducts();
+    const priorities = await getCategoryPriorities();
     setProducts(data);
+    setCategoryPriorities(priorities);
     if (showLoading) setLoading(false);
   };
 
@@ -38,6 +43,11 @@ export default function AdminDashboard() {
       setProductToEdit(null);
     }
     setIsModalOpen(true);
+  };
+
+  const handleSavePriorities = async (priorities: string[]) => {
+    await saveCategoryPriorities(priorities);
+    setCategoryPriorities(priorities);
   };
 
   const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,6 +212,14 @@ export default function AdminDashboard() {
           </button>
           
           <button
+            onClick={() => setIsPriorityModalOpen(true)}
+            disabled={importing}
+            className="flex-1 sm:flex-none flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            Priorizar Categorías
+          </button>
+          
+          <button
             onClick={() => handleOpenModal()}
             disabled={importing}
             className="flex-1 sm:flex-none flex justify-center items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
@@ -303,6 +321,14 @@ export default function AdminDashboard() {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveProduct}
         productToEdit={productToEdit}
+      />
+      
+      <CategoryPriorityModal
+        isOpen={isPriorityModalOpen}
+        onClose={() => setIsPriorityModalOpen(false)}
+        uniqueClasses={Array.from(new Set(products.map(p => p.clase).filter(Boolean)))}
+        initialPriorities={categoryPriorities}
+        onSave={handleSavePriorities}
       />
     </div>
   );

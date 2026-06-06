@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { ProductCard } from "@/components/ProductCard";
-import { getProducts, Product } from "@/lib/firebase/firestore";
-import { Leaf, Loader2, Search, Filter, ChevronDown, Check } from "lucide-react";
+import { getProducts, getCategoryPriorities, Product } from "@/lib/firebase/firestore";
+import { Leaf, Loader2, Search, Filter, ChevronDown, Check, MapPin } from "lucide-react";
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -12,25 +12,40 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(25);
+  const [categoryPriorities, setCategoryPriorities] = useState<string[]>([]);
 
   useEffect(() => {
-    async function fetchProducts() {
+    async function fetchData() {
       const data = await getProducts();
+      const priorities = await getCategoryPriorities();
+      
+      setCategoryPriorities(priorities);
 
-      // Ordenar para que los productos sin foto aparezcan al final
+      // Ordenar: 1° Prioridad de Categoría, 2° Foto, 3° Alfabético
       const sortedData = [...data].sort((a, b) => {
+        const aPriority = priorities.includes(a.clase) ? priorities.indexOf(a.clase) : Infinity;
+        const bPriority = priorities.includes(b.clase) ? priorities.indexOf(b.clase) : Infinity;
+
+        // 1. Ordenar por prioridad
+        if (aPriority !== bPriority) {
+          return aPriority - bPriority;
+        }
+
+        // 2. Ordenar por foto
         const aHasImage = Boolean(a.imageUrl && a.imageUrl.trim() !== "");
         const bHasImage = Boolean(b.imageUrl && b.imageUrl.trim() !== "");
 
         if (aHasImage && !bHasImage) return -1;
         if (!aHasImage && bHasImage) return 1;
-        return 0; // Mantiene el orden alfabético original para el resto
+        
+        return 0; // Mantiene el orden alfabético original
       });
 
       setProducts(sortedData);
       setLoading(false);
     }
-    fetchProducts();
+    fetchData();
   }, []);
 
   // Obtener clases únicas para el filtro
@@ -45,6 +60,25 @@ export default function Home() {
 
     return matchesSearch && matchesClass;
   });
+
+  // Infinite Scroll Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => prev + 25);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const target = document.getElementById("scroll-observer");
+    if (target) observer.observe(target);
+
+    return () => {
+      if (target) observer.unobserve(target);
+    };
+  }, [loading, filteredProducts.length]);
 
   const toggleClassFilter = (clase: string) => {
     setSelectedClasses(prev =>
@@ -74,7 +108,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="max-w-3xl mx-auto mb-12 flex flex-col sm:flex-row gap-4 relative">
+        <div className="max-w-4xl mx-auto mb-12 flex flex-col sm:flex-row gap-4 relative">
           <div className="relative flex-grow">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
@@ -138,6 +172,18 @@ export default function Home() {
               </div>
             )}
           </div>
+
+          <div className="relative sm:w-auto">
+            <a
+              href="https://maps.app.goo.gl/PJQzUJqSx23icfC66"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
+            >
+              <MapPin className="h-4 w-4 text-green-600" />
+              <span className="whitespace-nowrap">Ubícanos aquí</span>
+            </a>
+          </div>
         </div>
 
         {loading ? (
@@ -145,11 +191,19 @@ export default function Home() {
             <Loader2 className="w-10 h-10 text-green-600 animate-spin" />
           </div>
         ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-8">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-8">
+              {filteredProducts.slice(0, visibleCount).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+            
+            {visibleCount < filteredProducts.length && (
+              <div id="scroll-observer" className="h-20 w-full flex items-center justify-center mt-8">
+                <Loader2 className="w-8 h-8 text-green-600 animate-spin" />
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100">
             <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
