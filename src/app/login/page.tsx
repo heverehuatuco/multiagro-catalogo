@@ -17,7 +17,7 @@ export default function LoginPage() {
 
     // Simular un pequeño retraso para la experiencia de usuario
     setTimeout(() => {
-      if (password === "huatuco123") {
+      if (password === "Raymundomultiagro2026") {
         localStorage.setItem("admin_auth", "true");
         router.push("/admin");
       } else {
